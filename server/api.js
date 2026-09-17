@@ -733,4 +733,37 @@ router.post('/auth/login', (req, res) => {
   }
 });
 
+
+// -------------------------------------------------------------
+// AUTH - SIGNUP
+// -------------------------------------------------------------
+router.post('/auth/signup', (req, res) => {
+  try {
+    const db = getDb();
+    const { username, password, role, email, fullName } = req.body;
+
+    if (!username || !password || !role) {
+      return res.status(400).json({ success: false, error: 'Username, password and role are required.' });
+    }
+    if (role === 'guest') {
+      return res.status(400).json({ success: false, error: 'Cannot create a guest account.' });
+    }
+
+    const table = role === 'admin' ? 'admin_login' : role === 'agent' ? 'agent_login' : 'office_login';
+
+    // Check duplicate
+    const existing = db.prepare(`SELECT username FROM ${table} WHERE username = ?`).get(username);
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'Username already exists. Choose a different one.' });
+    }
+
+    db.prepare(`INSERT INTO ${table} (username, password) VALUES (?, ?)`).run(username, password);
+
+    res.json({ success: true, user: { username, role } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
+

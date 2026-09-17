@@ -6,10 +6,11 @@ import {
   Users, 
   FileText, 
   ShieldCheck, 
-  Search, 
   PlusCircle, 
   Sparkles,
-  Briefcase
+  Briefcase,
+  LogOut,
+  UserCircle2
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -18,7 +19,9 @@ export default function Navbar({
   userRole, 
   setUserRole, 
   onOpenAddProperty, 
-  onOpenCloseDeal 
+  onOpenCloseDeal,
+  user,
+  onLogout
 }) {
   const tabs = [
     { id: 'marketplace', label: 'Explore Homes', icon: Home },
@@ -55,25 +58,19 @@ export default function Navbar({
 
           {/* Role Indicator & Actions */}
           <div className="flex items-center space-x-3">
-            {/* Quick Role Switcher */}
-            <div className="hidden md:flex items-center bg-slate-800/90 rounded-lg p-1 border border-slate-700/70 text-xs">
-              <span className="text-slate-400 px-2 font-medium flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Mode:
-              </span>
-              {['admin', 'agent', 'office', 'guest'].map((role) => (
-                <button
-                  key={role}
-                  onClick={() => setUserRole(role)}
-                  className={`px-2.5 py-1 rounded capitalize font-medium transition-all ${
-                    userRole === role 
-                      ? 'bg-emerald-600 text-white shadow-sm' 
-                      : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-                  }`}
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
+            {/* User badge */}
+            {user && (
+              <div className="hidden md:flex items-center gap-2 bg-slate-800/90 rounded-lg px-3 py-1.5 border border-slate-700/70 text-xs">
+                <UserCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-slate-300 font-medium">{user.username}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                  user.role === 'admin'  ? 'bg-emerald-900/60 text-emerald-300' :
+                  user.role === 'agent'  ? 'bg-blue-900/60 text-blue-300' :
+                  user.role === 'office' ? 'bg-violet-900/60 text-violet-300' :
+                  'bg-slate-700 text-slate-400'
+                }`}>{user.role}</span>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <button
@@ -90,6 +87,16 @@ export default function Navbar({
             >
               <FileText className="w-4 h-4" />
               <span>Record Deal</span>
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={onLogout}
+              title="Sign out"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-rose-900/50 border border-slate-700 hover:border-rose-700 text-slate-400 hover:text-rose-400 text-xs font-semibold transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>

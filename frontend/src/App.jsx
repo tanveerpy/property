@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import LoginPage from './components/LoginPage';
 import MarketplaceView from './views/MarketplaceView';
 import DashboardOverview from './views/DashboardOverview';
 import PropertiesManager from './views/PropertiesManager';
@@ -16,7 +17,24 @@ import { api } from './api';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('marketplace');
+  const [user, setUser] = useState(null); // null = not logged in
   const [userRole, setUserRole] = useState('admin');
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setUserRole(userData.role);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setUserRole('admin');
+    setCurrentTab('marketplace');
+  };
+
+  // Show login page if not authenticated
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   // Datasets
   const [properties, setProperties] = useState([]);
@@ -123,6 +141,8 @@ export default function App() {
         setUserRole={setUserRole}
         onOpenAddProperty={() => setIsAddPropertyOpen(true)}
         onOpenCloseDeal={() => handleRecordDeal(null)}
+        user={user}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
