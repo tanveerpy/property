@@ -15,8 +15,8 @@ const DEMO_CREDENTIALS = {
   guest:  { username: 'guest',  password: '' },
 };
 
-export default function LoginPage({ onLogin }) {
-  const [tab, setTab]             = useState('login');   // 'login' | 'signup'
+export default function LoginPage({ onLogin, onBack, initialTab = 'login' }) {
+  const [tab, setTab]             = useState(initialTab); // 'login' | 'signup'
   const [role, setRole]           = useState('admin');
   const [username, setUsername]   = useState('');
   const [password, setPassword]   = useState('');
@@ -127,6 +127,16 @@ export default function LoginPage({ onLogin }) {
       </div>
 
       <div className="relative w-full max-w-md">
+
+        {/* Back button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 text-sm font-medium mb-6 transition-colors group"
+          >
+            <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Homepage
+          </button>
+        )}
 
         {/* Brand header */}
         <div className="text-center mb-8">

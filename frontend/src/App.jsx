@@ -1,65 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import LoginPage from './components/LoginPage';
-import MarketplaceView from './views/MarketplaceView';
-import DashboardOverview from './views/DashboardOverview';
-import PropertiesManager from './views/PropertiesManager';
-import AgentsManager from './views/AgentsManager';
-import ClientsManager from './views/ClientsManager';
-import TransactionsManager from './views/TransactionsManager';
-import QueryStudio from './views/QueryStudio';
 
-import PropertyModal from './components/PropertyModal';
+import HomePage     from './views/HomePage';
+import LoginPage    from './components/LoginPage';
+import Navbar       from './components/Navbar';
+
+import MarketplaceView    from './views/MarketplaceView';
+import DashboardOverview  from './views/DashboardOverview';
+import PropertiesManager  from './views/PropertiesManager';
+import AgentsManager      from './views/AgentsManager';
+import ClientsManager     from './views/ClientsManager';
+import TransactionsManager from './views/TransactionsManager';
+import QueryStudio        from './views/QueryStudio';
+
+import PropertyModal    from './components/PropertyModal';
 import AddPropertyModal from './components/AddPropertyModal';
-import CloseDealModal from './components/CloseDealModal';
+import CloseDealModal   from './components/CloseDealModal';
 
 import { api } from './api';
 
+// ─────────────────────────────────────────────────────────────
+// Screens: 'home' | 'login' | 'app'
+// ─────────────────────────────────────────────────────────────
+
 export default function App() {
+  const [screen, setScreen]   = useState('home'); // start on homepage
+  const [loginMode, setLoginMode] = useState('login'); // 'login' | 'signup'
+  const [user, setUser]       = useState(null);
   const [currentTab, setCurrentTab] = useState('marketplace');
-  const [user, setUser] = useState(null); // null = not logged in
-  const [userRole, setUserRole] = useState('admin');
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-    setUserRole(userData.role);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setUserRole('admin');
-    setCurrentTab('marketplace');
-  };
-
-  // Show login page if not authenticated
-  if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
 
   // Datasets
-  const [properties, setProperties] = useState([]);
-  const [agents, setAgents] = useState([]);
-  const [offices, setOffices] = useState([]);
-  const [buyers, setBuyers] = useState([]);
-  const [sellers, setSellers] = useState([]);
+  const [properties,   setProperties]   = useState([]);
+  const [agents,       setAgents]       = useState([]);
+  const [offices,      setOffices]      = useState([]);
+  const [buyers,       setBuyers]       = useState([]);
+  const [sellers,      setSellers]      = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [analytics, setAnalytics] = useState(null);
+  const [analytics,    setAnalytics]    = useState(null);
 
   // Modals
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [selectedProperty,  setSelectedProperty]  = useState(null);
   const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
-  const [isCloseDealOpen, setIsCloseDealOpen] = useState(false);
+  const [isCloseDealOpen,   setIsCloseDealOpen]   = useState(false);
   const [dealTargetProperty, setDealTargetProperty] = useState(null);
 
-  // Toast / Alert notification
+  // Toast
   const [toast, setToast] = useState(null);
-
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch all core datasets
+  // ── Auth handlers ─────────────────────────────────────────
+
+  /** Navigate to login page, pre-selecting a tab */
+  const goToLogin = (mode = 'login') => {
+    setLoginMode(mode);
+    setScreen('login');
+  };
+
+  /** Called by LoginPage after successful auth */
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setScreen('app');
+    setCurrentTab('marketplace');
+  };
+
+  /** Called when user logs out */
+  const handleLogout = () => {
+    setUser(null);
+    setScreen('home');
+    setCurrentTab('marketplace');
+  };
+
+  /** "Browse" from homepage — enter app as guest without logging in */
+  const handleBrowseAsGuest = () => {
+    setUser({ username: 'Guest', role: 'guest' });
+    setScreen('app');
+    setCurrentTab('marketplace');
+  };
+
+  /** Clicking "List Property" from homepage — require login first */
+  const handleListProperty = () => {
+    if (user) {
+      setScreen('app');
+      setIsAddPropertyOpen(true);
+    } else {
+      goToLogin('login');
+    }
+  };
+
+  // ── Data loading ──────────────────────────────────────────
+
   const loadData = async () => {
     try {
       const [pRes, aRes, oRes, bRes, sRes, tRes, statRes] = await Promise.all([
@@ -71,23 +102,23 @@ export default function App() {
         api.getTransactions(),
         api.getAnalytics()
       ]);
-
-      if (pRes.success) setProperties(pRes.data);
-      if (aRes.success) setAgents(aRes.data);
-      if (oRes.success) setOffices(oRes.data);
-      if (bRes.success) setBuyers(bRes.data);
-      if (sRes.success) setSellers(sRes.data);
-      if (tRes.success) setTransactions(tRes.data);
+      if (pRes.success)    setProperties(pRes.data);
+      if (aRes.success)    setAgents(aRes.data);
+      if (oRes.success)    setOffices(oRes.data);
+      if (bRes.success)    setBuyers(bRes.data);
+      if (sRes.success)    setSellers(sRes.data);
+      if (tRes.success)    setTransactions(tRes.data);
       if (statRes.success) setAnalytics(statRes.data);
     } catch (err) {
-      console.error('Failed to load application data:', err);
-      showToast('Error loading database records', 'error');
+      console.error('Failed to load data:', err);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (screen === 'app') loadData();
+  }, [screen]);
+
+  // ── Deal / property helpers ───────────────────────────────
 
   const handleRecordDeal = (property) => {
     setDealTargetProperty(property || null);
@@ -101,26 +132,51 @@ export default function App() {
 
   const handleDealClosed = () => {
     loadData();
-    showToast('Deal finalized! Property marked as SOLD and agent sales updated.');
+    showToast('Deal finalized! Property marked as SOLD.');
   };
 
   const handleDeleteProperty = async (pid) => {
-    if (!confirm('Are you sure you want to remove this property listing?')) return;
+    if (!confirm('Remove this property listing?')) return;
     try {
       const res = await api.deleteProperty(pid);
-      if (res.success) {
-        showToast('Property deleted successfully');
-        loadData();
-      }
+      if (res.success) { showToast('Property deleted'); loadData(); }
     } catch (err) {
       showToast(err.message, 'error');
     }
   };
 
+  // ─────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────
+
+  // 1. Public homepage
+  if (screen === 'home') {
+    return (
+      <HomePage
+        onSignIn={() => goToLogin('login')}
+        onSignUp={() => goToLogin('signup')}
+        onBrowse={handleBrowseAsGuest}
+        onListProperty={handleListProperty}
+      />
+    );
+  }
+
+  // 2. Login / Signup page
+  if (screen === 'login') {
+    return (
+      <LoginPage
+        initialTab={loginMode}
+        onLogin={handleLogin}
+        onBack={() => setScreen('home')}
+      />
+    );
+  }
+
+  // 3. Main App (authenticated or guest)
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-600 selection:text-white">
-      
-      {/* Toast Alert */}
+
+      {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-bounce">
           <div className={`px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2 ${
@@ -128,24 +184,24 @@ export default function App() {
               ? 'bg-rose-900 text-rose-100 border-rose-700'
               : 'bg-emerald-950 text-emerald-100 border-emerald-700'
           }`}>
-            <span>{toast.message}</span>
+            {toast.message}
           </div>
         </div>
       )}
 
-      {/* Main Navigation */}
       <Navbar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        userRole={userRole}
-        setUserRole={setUserRole}
-        onOpenAddProperty={() => setIsAddPropertyOpen(true)}
-        onOpenCloseDeal={() => handleRecordDeal(null)}
         user={user}
+        onOpenAddProperty={() => {
+          if (user?.role === 'guest') { goToLogin('login'); return; }
+          setIsAddPropertyOpen(true);
+        }}
+        onOpenCloseDeal={() => handleRecordDeal(null)}
         onLogout={handleLogout}
+        onGoHome={() => setScreen('home')}
       />
 
-      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {currentTab === 'marketplace' && (
           <MarketplaceView
@@ -154,7 +210,6 @@ export default function App() {
             onRecordDeal={handleRecordDeal}
           />
         )}
-
         {currentTab === 'dashboard' && (
           <DashboardOverview
             analytics={analytics}
@@ -163,7 +218,6 @@ export default function App() {
             onOpenCloseDeal={() => handleRecordDeal(null)}
           />
         )}
-
         {currentTab === 'properties' && (
           <PropertiesManager
             properties={properties}
@@ -173,66 +227,39 @@ export default function App() {
             onDeleteProperty={handleDeleteProperty}
           />
         )}
-
         {currentTab === 'agents' && (
-          <AgentsManager
-            agents={agents}
-            offices={offices}
-            onAgentAdded={loadData}
-          />
+          <AgentsManager agents={agents} offices={offices} onAgentAdded={loadData} />
         )}
-
         {currentTab === 'clients' && (
-          <ClientsManager
-            buyers={buyers}
-            sellers={sellers}
-            agents={agents}
-            onRefreshClients={loadData}
-          />
+          <ClientsManager buyers={buyers} sellers={sellers} agents={agents} onRefreshClients={loadData} />
         )}
-
         {currentTab === 'transactions' && (
-          <TransactionsManager
-            transactions={transactions}
-            onOpenCloseDealModal={() => handleRecordDeal(null)}
-          />
+          <TransactionsManager transactions={transactions} onOpenCloseDealModal={() => handleRecordDeal(null)} />
         )}
-
-        {currentTab === 'queries' && (
-          <QueryStudio />
-        )}
+        {currentTab === 'queries' && <QueryStudio />}
       </main>
 
-      {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 text-xs py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <p className="font-semibold text-slate-300">MyDreamHome Management System</p>
-            <p className="text-[11px] text-slate-500">
-              Modernized full-stack architecture powered by Express REST API, SQLite, and React.
-            </p>
+            <p className="text-[11px] text-slate-500">Full-stack · Express REST API · SQLite · React</p>
           </div>
           <div className="flex items-center gap-4 text-slate-400">
-            <span>Branch Offices: Karachi • Lahore • Islamabad • Rawalpindi</span>
-            <span>•</span>
-            <button 
-              onClick={() => setCurrentTab('queries')}
-              className="hover:text-emerald-400 transition-colors"
-            >
-              SQL Analytics
-            </button>
+            <span>Karachi · Lahore · Islamabad · Rawalpindi</span>
+            <span>·</span>
+            <button onClick={() => setCurrentTab('queries')} className="hover:text-emerald-400 transition-colors">SQL Analytics</button>
+            <span>·</span>
+            <button onClick={() => setScreen('home')} className="hover:text-emerald-400 transition-colors">Home</button>
           </div>
         </div>
       </footer>
 
-      {/* Property Details Modal */}
       <PropertyModal
         property={selectedProperty}
         onClose={() => setSelectedProperty(null)}
         onRecordDeal={handleRecordDeal}
       />
-
-      {/* Add Property Listing Modal */}
       <AddPropertyModal
         isOpen={isAddPropertyOpen}
         onClose={() => setIsAddPropertyOpen(false)}
@@ -240,8 +267,6 @@ export default function App() {
         sellers={sellers}
         onSubmitSuccess={handlePropertyCreated}
       />
-
-      {/* Close Deal / Record Transaction Modal */}
       <CloseDealModal
         isOpen={isCloseDealOpen}
         onClose={() => setIsCloseDealOpen(false)}
@@ -252,7 +277,6 @@ export default function App() {
         agents={agents}
         onDealClosed={handleDealClosed}
       />
-
     </div>
   );
 }

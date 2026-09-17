@@ -16,12 +16,11 @@ import {
 export default function Navbar({ 
   currentTab, 
   setCurrentTab, 
-  userRole, 
-  setUserRole, 
+  user,
   onOpenAddProperty, 
   onOpenCloseDeal,
-  user,
-  onLogout
+  onLogout,
+  onGoHome
 }) {
   const tabs = [
     { id: 'marketplace', label: 'Explore Homes', icon: Home },
@@ -40,7 +39,7 @@ export default function Navbar({
           
           {/* Logo & Brand */}
           <div 
-            onClick={() => setCurrentTab('marketplace')} 
+            onClick={onGoHome || (() => setCurrentTab('marketplace'))} 
             className="flex items-center space-x-3 cursor-pointer group"
           >
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/40 group-hover:scale-105 transition-transform duration-200">
