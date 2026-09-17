@@ -1,4 +1,4 @@
-name: CI & Build Workflow
+name: CI & Deploy to GitHub Pages
 
 on:
   push:
@@ -7,23 +7,30 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+# Allow GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deployment at a time
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     name: Build & Verify
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [22.x]  # node:sqlite built-in requires Node.js >=22.5
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
+      - name: Set up Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22.x   # node:sqlite built-in requires Node.js >=22.5
           cache: 'npm'
 
       - name: Install root dependencies
@@ -38,3 +45,23 @@ jobs:
       - name: Verify SQLite database initialization & seeding
         run: |
           node --experimental-sqlite -e "const { getDb } = require('./server/database'); const db = getDb(); const offices = db.prepare('SELECT COUNT(*) as count FROM office').get().count; const props = db.prepare('SELECT COUNT(*) as count FROM properties').get().count; console.log('Verification Success: ' + offices + ' offices, ' + props + ' properties loaded.');"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
