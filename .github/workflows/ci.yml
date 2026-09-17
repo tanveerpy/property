@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x]  # node:sqlite built-in requires Node.js >=22.5
 
     steps:
       - name: Checkout repository
@@ -37,4 +37,4 @@ jobs:
 
       - name: Verify SQLite database initialization & seeding
         run: |
-          node -e "const { getDb } = require('./server/database'); const db = getDb(); const offices = db.prepare('SELECT COUNT(*) as count FROM office').get().count; const props = db.prepare('SELECT COUNT(*) as count FROM properties').get().count; console.log('Verification Success: ' + offices + ' offices, ' + props + ' properties loaded.');"
+          node --experimental-sqlite -e "const { getDb } = require('./server/database'); const db = getDb(); const offices = db.prepare('SELECT COUNT(*) as count FROM office').get().count; const props = db.prepare('SELECT COUNT(*) as count FROM properties').get().count; console.log('Verification Success: ' + offices + ' offices, ' + props + ' properties loaded.');"
