@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev:server": "nodemon index.js",
+    "dev:client": "npm --prefix frontend run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "npm --prefix frontend run build",
+    "install:all": "npm install && npm --prefix frontend install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -10,6 +16,9 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
+    "concurrently": "^10.0.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
     "mysql": "^2.18.1",
